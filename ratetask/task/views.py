@@ -77,8 +77,7 @@ class PriceApiView(APIView):
 
             new_date_from = datetime.strptime(day_from, "%Y-%m-%d")
             new_date_to = datetime.strptime(day_to, "%Y-%m-%d")
-
-            response = {}
+            response_data = []
             result = []
             date_list = []
             price_list = []
@@ -99,14 +98,17 @@ class PriceApiView(APIView):
                     if len(price_list)>0:
                         avg_price = sum(price_list) / len(price_list)
                         if len(price_list) > 2 :
-                            print(avg_price)
-                            response[day] = avg_price
+                            # print(avg_price)
+                            # response[day] = avg_price
+                            response = dict(day=day,price=avg_price)
+                            response_data.append(response)
                         else:
-                            response[day] = "null"
+                            response = dict(day=day, price="null")
+                            response_data.append(response)
                     else:
                         return Response({"message":"no price data"})
 
-                return Response(response, status=status.HTTP_200_OK)
+                return Response(response_data, status=status.HTTP_200_OK)
             else:
                 return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)
         else:
