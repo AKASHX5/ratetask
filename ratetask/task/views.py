@@ -18,6 +18,8 @@ from rest_framework import permissions
 from .models import Regions, Ports, Prices
 from .serializers import PortSerializer, RegionSerializer, PricetSerializer
 from django.http import JsonResponse, HttpResponse
+from .utils import format_date
+
 
 import json
 
@@ -34,8 +36,6 @@ class PortApiView(ListAPIView):
         ports = Ports.objects.filter(name=name)
         print(ports)
         return ports
-
-
 
 
 class RegionApiView(APIView):
@@ -73,27 +73,24 @@ class PriceApiView(APIView):
         orig_code = self.request.query_params.get('orig_code')
         dest_code = self.request.query_params.get('dest_code')
         print(day_to,day_from,orig_code,dest_code)
+        response_data = []
+        result = []
+        price_list = []
         if day_to and day_from and orig_code and dest_code:
 
-            new_date_from = datetime.strptime(day_from, "%Y-%m-%d")
-            new_date_to = datetime.strptime(day_to, "%Y-%m-%d")
-            response_data = []
-            result = []
-            date_list = []
-            price_list = []
+            date_list = format_date(day_from, day_to)
+            print(date_list)
 
+            if date_list is None:
+                return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)
 
-            if new_date_to > new_date_from:
-                for n in range(int((new_date_to - new_date_from).days) + 1):
-                    dt = ( new_date_from + timedelta(n))
-                    dates = dt.strftime("%Y-%m-%d")
-                    date_list.append(dates)
+            else:
 
                 for day in date_list:
                     queryset = Prices.objects.filter(day=day).filter(orig_code=orig_code).filter(dest_code=dest_code).values()
                     result.append(queryset)
                     for data in queryset:
-                        price_list.append(data['price'])
+                        price_list.append(data['price']) #apply list comprehesion
 
                     if len(price_list)>0:
                         avg_price = sum(price_list) / len(price_list)
@@ -106,11 +103,11 @@ class PriceApiView(APIView):
                             response = dict(day=day, price="null")
                             response_data.append(response)
                     else:
-                        return Response({"message":"no price data"})
+                        return Response({"message": "no price data"})
 
                 return Response(response_data, status=status.HTTP_200_OK)
-            else:
-                return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)
+            # else:
+            #     return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message":"please query with all the params"}, status=status.HTTP_400_BAD_REQUEST)
 
