@@ -14,4 +14,5 @@ def format_date(day_from,day_to):
         dt = (new_date_from + timedelta(n))
         dates = dt.strftime("%Y-%m-%d")
         date_list.append(dates)
+
     return date_list

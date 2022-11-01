@@ -12,8 +12,8 @@ router = DefaultRouter()
 
 
 urlpatterns = [
-    path('task/ports', PortApiView.as_view()),
-    path('task/region', RegionApiView.as_view()),
-    path('task/price', PriceApiView.as_view())
+    path('task/ports', PortApiView.as_view(),name='ports'),
+    path('task/region', RegionApiView.as_view(),name='region'),
+    path('task/price', PriceApiView.as_view(),name='price')
 
 ]

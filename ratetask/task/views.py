@@ -55,23 +55,14 @@ class RegionApiView(APIView):
 class PriceApiView(APIView):
 
     def get(self,request):
-        """Takes params from the user and return a list of dictionary with date and average prices.
+        """Takes params from the user and return a list of dictionary with date and average prices."""
 
-            When a rightId key is found in an event, it gets removed
-            and replaced by an overlay key-value pair where the value is
-            the info required to display the resolved overlay
 
-            :param day_from: events to resolve rights ids for
-            :type events: list
-            :param ddb_reader: DynamoDB reader used for reading configuration
-            :type ddb_reader: m2a_api_helper.Read
-            :param eventer: used for sending messages to Splunk
-            :type eventer: m2a_eventer.Eventer
-            """
         day_from = self.request.query_params.get('date_from')
         day_to = self.request.query_params.get('date_to')
         orig_code = self.request.query_params.get('orig_code')
         dest_code = self.request.query_params.get('dest_code')
+
         print(day_to,day_from,orig_code,dest_code)
         response_data = []
         result = []
@@ -79,7 +70,7 @@ class PriceApiView(APIView):
         if day_to and day_from and orig_code and dest_code:
 
             date_list = format_date(day_from, day_to)
-            print(date_list)
+            # print(date_list)
 
             if date_list is None:
                 return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)
@@ -87,16 +78,19 @@ class PriceApiView(APIView):
             else:
 
                 for day in date_list:
-                    queryset = Prices.objects.filter(day=day).filter(orig_code=orig_code).filter(dest_code=dest_code).values()
+                    queryset = Prices.objects.get_price(day,orig_code,dest_code)
                     result.append(queryset)
+
                     for data in queryset:
                         price_list.append(data['price']) #apply list comprehesion
+
+                    # price_list = [data['price'] for data in queryset]
+
+                    print(price_list)
 
                     if len(price_list)>0:
                         avg_price = sum(price_list) / len(price_list)
                         if len(price_list) > 2 :
-                            # print(avg_price)
-                            # response[day] = avg_price
                             response = dict(day=day,price=avg_price)
                             response_data.append(response)
                         else:
@@ -104,7 +98,6 @@ class PriceApiView(APIView):
                             response_data.append(response)
                     else:
                         return Response({"message": "no price data"})
-
                 return Response(response_data, status=status.HTTP_200_OK)
             # else:
             #     return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)

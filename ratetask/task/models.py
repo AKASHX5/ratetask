@@ -22,14 +22,19 @@ class Ports(models.Model):
         db_table = 'ports'
 
 
+class PriceManager(models.Manager):
+    def get_price(self,day,orig_code,dest_code):
+        queryset = Prices.objects.filter(day=day).filter(orig_code=orig_code).filter(dest_code=dest_code).values()
+        return queryset
+
+
 class Prices(models.Model):
     orig_code = models.ForeignKey(Ports, models.DO_NOTHING, db_column='orig_code', related_name='orig_code', blank=True)
     dest_code = models.ForeignKey(Ports, models.DO_NOTHING, db_column='dest_code', related_name='dest_code', blank=True)
     day = models.DateField(primary_key=True,blank=True)
     price = models.IntegerField(blank=True)
 
-
-    objects = models.Manager()
+    objects = PriceManager()
 
     class Meta:
         managed = False
