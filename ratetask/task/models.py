@@ -12,6 +12,7 @@ from django.db import models
 
 
 class PortManager(models.Manager):
+    '''model method to return Ports based on parent_slug'''
 
     def get_port_code(self, parent_slug):
         ports = Ports.objects.filter(parent_slug=parent_slug).values()
@@ -31,6 +32,7 @@ class Ports(models.Model):
 
 
 class PriceManager(models.Manager):
+    '''model method to return  filtered queryset of Prices'''
     def get_price(self,day,orig_code,dest_code):
         queryset = Prices.objects.filter(day=day).filter(orig_code=orig_code).filter(dest_code=dest_code).values()
         return queryset
@@ -50,6 +52,7 @@ class Prices(models.Model):
 
 
 class RegionManager(models.Manager):
+    '''model method to return parent slug '''
     def get_parent_slug(self, region_slug):
         region = Regions.objects.filter(slug=region_slug).values()
         parent_slug = region[0]['parent_slug_id']

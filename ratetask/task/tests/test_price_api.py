@@ -1,4 +1,3 @@
-from django.contrib.auth import get_user_model
 from django.db import connection
 from django.urls import reverse
 from django.test import TestCase
@@ -6,13 +5,10 @@ from django.test import TestCase
 from rest_framework import status
 from rest_framework.test import APIClient
 
-# from ratetask.task.models import Prices
-
 from ..models import Prices, Regions, Ports
 from ..utils import format_date
 from django.urls import reverse
 
-# from ratetask.task.models import Prices
 
 
 class PriceApiTest(TestCase):
@@ -122,18 +118,6 @@ class PriceApiTest(TestCase):
         # response = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":self.orig_port,"dest_code":self.dest_port})
         self.assertEqual(response2.status_code,200)
 
-
-
-
-
-
-
-
-
-
-
-
-#
 #
 # class Testutils(TestCase):
 #
