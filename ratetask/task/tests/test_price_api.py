@@ -19,14 +19,6 @@ class PriceApiTest(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-        self.test_data = {
-            "day": "2016-01-02",
-            "price": 1715,
-           "orig_code":"CNGGZ",
-           "dest_code":"EETLL"
-            }
-
-
         connection.cursor().execute('''CREATE TABLE ports (
     code text NOT NULL,
     name text NOT NULL,
@@ -45,7 +37,7 @@ class PriceApiTest(TestCase):
     parent_slug text
 )''')
 
-        data = {
+        self.test_data = {
             "day": "2016-01-02",
             "price": 1715,
            "orig_code":"CNGGZ",
@@ -80,10 +72,10 @@ class PriceApiTest(TestCase):
 
         #not using faker for time
         data = {
-            "day": "2016-01-02",
-            "price": 1715,
-           "orig_code":"CNGGZ",
-           "dest_code":"EETLL"
+                "day": "2016-01-02",
+                "price": 1715,
+                "orig_code":"CNGGZ",
+                "dest_code":"EETLL"
             }
 
         data2 = {
@@ -107,7 +99,7 @@ class PriceApiTest(TestCase):
 
 
         #create price
-        post = Prices.objects.create(day=data['day'], price=data["price"], orig_code=orig_port, dest_code=dest_port)
+        new_price = Prices.objects.create(day=data['day'], price=data["price"], orig_code=orig_port, dest_code=dest_port)
 
 
         price = Prices.objects.get_price(day=data['day'],orig_code=orig_port,dest_code=dest_port)
@@ -122,11 +114,13 @@ class PriceApiTest(TestCase):
 
     def test_price_api(self):
 
-        url = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":self.orig_port,"dest_code":self.dest_port})
-        response = url.json()
+        # url = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":"CNCWN","dest_code":"FIKTK"})
+        # response = url.json()
         # print(response)
-
-        # self.assertEqual(self.test_data['price'],response['price'])
+        response2 = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":"CNCWN","dest_code":"FIKTK"})
+        # response = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":"CNCWN","dest_code":"FIKTK"})
+        # response = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":self.orig_port,"dest_code":self.dest_port})
+        self.assertEqual(response2.status_code,200)
 
 
 

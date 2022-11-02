@@ -3,6 +3,7 @@ from django.shortcuts import render
 # Create your views here.
 
 from django.shortcuts import render
+from django.urls import reverse
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +11,7 @@ from rest_framework.generics import ListAPIView
 from django.shortcuts import get_object_or_404
 from django.core import serializers
 from datetime import timedelta, date, datetime
-from django.http import HttpResponse
+# from django.http.HttpRequest import request  as rq
 from rest_framework import status
 
 from rest_framework import status
@@ -62,15 +63,23 @@ class PriceApiView(APIView):
         day_to = self.request.query_params.get('date_to')
         orig_code = self.request.query_params.get('orig_code')
         dest_code = self.request.query_params.get('dest_code')
+        region = self.request.query_params.get("region_slug")
 
         print(day_to,day_from,orig_code,dest_code)
         response_data = []
         result = []
         price_list = []
-        if day_to and day_from and orig_code and dest_code:
+        if day_to and day_from and ((orig_code and dest_code) or region):
+
+            if region:
+                parent_slug = Regions.objects.get_parent_slug(region)
+                # print(parent_slug)
+
+                port_code = Ports.objects.get_port_code(parent_slug)
+
+                print(port_code)
 
             date_list = format_date(day_from, day_to)
-            # print(date_list)
 
             if date_list is None:
                 return Response({"message": "please put the dates in sequence"}, status=status.HTTP_400_BAD_REQUEST)
@@ -86,15 +95,14 @@ class PriceApiView(APIView):
 
                     # price_list = [data['price'] for data in queryset]
 
-                    print(price_list)
 
                     if len(price_list)>0:
                         avg_price = sum(price_list) / len(price_list)
                         if len(price_list) > 2 :
-                            response = dict(day=day,price=avg_price)
+                            response = dict(day=day,average_price=avg_price)
                             response_data.append(response)
                         else:
-                            response = dict(day=day, price="null")
+                            response = dict(day=day, average_price="null")
                             response_data.append(response)
                     else:
                         return Response({"message": "no price data"})
