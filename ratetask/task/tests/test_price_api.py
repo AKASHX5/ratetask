@@ -8,10 +8,28 @@ from rest_framework.test import APIClient
 from ..models import Prices, Regions, Ports
 from ..utils import format_date
 from django.urls import reverse
-
-
+import pytest
 
 class PriceApiTest(TestCase):
+    price_payload = {
+        "day": "2016-01-02",
+        "price": 1715,
+        "orig_code": "CNGGZ",
+        "dest_code": "EETLL"
+    }
+
+    region_payload = {
+        "slug": "stockholm_area",
+        "name": "Stockholm",
+        "parent_slug": "scandinavia",
+    }
+
+    port_payload = {
+        "code": "CNCWN",
+        "name": "Chiwan",
+        "parent_slug": "china_south_main"
+    }
+
     def setUp(self):
         self.client = APIClient()
 
@@ -33,108 +51,44 @@ class PriceApiTest(TestCase):
     parent_slug text
 )''')
 
-        self.test_data = {
-            "day": "2016-01-02",
-            "price": 1715,
-           "orig_code":"CNGGZ",
-           "dest_code":"EETLL"
-            }
-
-        data2 = {
-            "slug": "stockholm_area",
-            "name": "Stockholm",
-            "parent_slug": "scandinavia",
-            }
-
-        data3 = {
-            "code":"CNCWN",
-            "name":"Chiwan",
-            "parent_slug":"china_south_main"
-        }
-
-        region = Regions.objects.create(slug=data2['slug'], name=data2["name"])
-        new_region = Regions.objects.create(slug=data2['slug'], name=data2['name'], parent_slug=region)
-
-        #create ports
-        self.orig_port = Ports.objects.create(code=data3['code'],name=data3['name'],parent_slug=new_region)
-        self.dest_port = Ports.objects.create(code=data3['code'],name=data3['name'],parent_slug=new_region)
-        Prices.objects.create(orig_code=self.orig_port,dest_code=self.dest_port,day=self.test_data['day'],price=self.test_data['price'])
-
     def test_price_model_method(self):
 
         """"
         """
 
-
-        #not using faker for time
-        data = {
-                "day": "2016-01-02",
-                "price": 1715,
-                "orig_code":"CNGGZ",
-                "dest_code":"EETLL"
-            }
-
-        data2 = {
-            "slug": "stockholm_area",
-            "name": "Stockholm",
-            "parent_slug": "scandinavia",
-            }
-
-        data3 = {
-            "code":"CNCWN",
-            "name":"Chiwan",
-            "parent_slug":"china_south_main"
-        }
-
-        region = Regions.objects.create(slug=data2['slug'], name=data2["name"])
-        new_region = Regions.objects.create(slug=data2['slug'], name=data2['name'], parent_slug=region)
+        region = Regions.objects.create(slug=self.region_payload['slug'], name=self.region_payload["name"])
+        new_region = Regions.objects.create(slug=self.region_payload['slug'], name=self.region_payload['name'], parent_slug=region)
 
         #create ports
-        orig_port = Ports.objects.create(code=data3['code'],name=data3['name'],parent_slug=new_region)
-        dest_port = Ports.objects.create(code=data3['code'],name=data3['name'],parent_slug=new_region)
+        orig_port = Ports.objects.create(code=self.port_payload['code'],name=self.port_payload['name'],parent_slug=new_region)
+        dest_port = Ports.objects.create(code=self.port_payload['code'],name=self.port_payload['name'],parent_slug=new_region)
+
+        # #create price
+        Prices.objects.create(day=self.price_payload['day'], price=self.price_payload["price"], orig_code=orig_port, dest_code=dest_port)
 
 
-        #create price
-        new_price = Prices.objects.create(day=data['day'], price=data["price"], orig_code=orig_port, dest_code=dest_port)
+        price = Prices.objects.get_price(day=self.price_payload['day'],orig_code=orig_port,dest_code=dest_port)
 
+        self.assertEqual(price[0]['orig_code_id'],self.port_payload['code'])
+        self.assertEqual(price[0]['dest_code_id'],self.port_payload['code'])
+        self.assertEqual(price[0]['price'],self.price_payload['price'])
 
-        price = Prices.objects.get_price(day=data['day'],orig_code=orig_port,dest_code=dest_port)
-        price2 = Prices.objects.get_price(day=data['day'],orig_code=orig_port,dest_code=dest_port)
-        price3 = Prices.objects.get_price(day=data['day'],orig_code=orig_port,dest_code=dest_port)
+    def test_price_api_with_orig__dest_code(self):
 
-        # print(price[0])
-
-        self.assertEqual(price[0]['orig_code_id'],data3['code'])
-        self.assertEqual(price[0]['dest_code_id'],data3['code'])
-        self.assertEqual(price[0]['price'],data['price'])
-
-    def test_price_api(self):
-
-        # url = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":"CNCWN","dest_code":"FIKTK"})
-        # response = url.json()
-        # print(response)
         response2 = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":"CNCWN","dest_code":"FIKTK"})
-        # response = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":"CNCWN","dest_code":"FIKTK"})
-        # response = self.client.get(reverse('price'),{"date_from":'2016-01-01',"date_to":"2016-01-26","orig_code":self.orig_port,"dest_code":self.dest_port})
+
         self.assertEqual(response2.status_code,200)
 
-#
-# class Testutils(TestCase):
-#
-#     def test_date_format(self):
-#         test_data = {
-#
-#         }
-#
-#         date_list = format_date()
-#
-
-
-
-
-    # def test_get_data(self):
-    #     """Test that login is required to access this endpoint"""
-    #     response = self.client.get(reverse('price'))
+    def test_price_api_with_improper_date_sequence(self):
+        response = self.client.get(reverse('price'),
+                                    {"date_to": '2016-01-01', "date_from": "2016-01-26", "orig_code": "CNCWN",
+                                     "dest_code": "FIKTK"})
+        self.assertEqual(response.status_code,400)
     #
-    #     self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+    def test_price_api_with_region(self):
+        pass
+
+
+
+
 

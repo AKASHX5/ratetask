@@ -1,6 +1,6 @@
 from django.urls import path, include
 from .views import (
-    PortApiView,RegionApiView,PriceApiView
+    RegionApiView,PriceApiView
 )
 # from rest_framework.urlpatterns import format_suffix_patterns
 from rest_framework.routers import DefaultRouter
@@ -12,7 +12,6 @@ router = DefaultRouter()
 
 
 urlpatterns = [
-    path('task/ports', PortApiView.as_view(),name='ports'),
     path('task/region', RegionApiView.as_view(),name='region'),
     path('task/price', PriceApiView.as_view(),name='price')
 

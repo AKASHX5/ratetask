@@ -56,6 +56,7 @@ class RegionManager(models.Manager):
     def get_parent_slug(self, region_slug):
         region = Regions.objects.filter(slug=region_slug).values()
         parent_slug = region[0]['parent_slug_id']
+        print(parent_slug)
         return parent_slug
 
 

@@ -2,42 +2,32 @@ from django.shortcuts import render
 
 # Create your views here.
 
-from django.shortcuts import render
-from django.urls import reverse
-from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.generics import ListAPIView
-from django.shortcuts import get_object_or_404
-from django.core import serializers
-from datetime import timedelta, date, datetime
-# from django.http.HttpRequest import request  as rq
-from rest_framework import status
+
 
 from rest_framework import status
-from rest_framework import permissions
 from .models import Regions, Ports, Prices
-from .serializers import PortSerializer, RegionSerializer, PricetSerializer
-from django.http import JsonResponse, HttpResponse
 from .utils import format_date
 
-import json
 
 
 # Create your views here.
 
-class PortApiView(ListAPIView):
-    serializer_class = PortSerializer
-
-    def get_queryset(self):
-        name = self.request.query_params.get('name')
-        print(f"name is {name}")
-        ports = Ports.objects.filter(name=name)
-        print(ports)
-        return ports
-
 
 class RegionApiView(APIView):
+    '''Returns a list of PORTS->dict from given region slug
+         :param region_slug: region_slug
+        :type region_slug: string
+    with the region slug it retrives region name and with region it retrives ports from PORT table
+
+    request_url:http://127.0.0.1:8000/api/v1/task/region?region_slug=uk_sub
+    :returns:  [{
+        "code": "IESNN",
+        "name": "Shannon",
+        "parent_slug_id": "north_europe_sub"
+    },]
+    '''
 
     def get(self, request):
         region_slug = self.request.query_params.get('region_slug')
@@ -47,7 +37,6 @@ class RegionApiView(APIView):
 
         ports = Ports.objects.filter(parent_slug=region).values()
 
-        print(type(region))
         return Response(ports)
 
 
@@ -68,6 +57,17 @@ class PriceApiView(APIView):
                 :type orig_code: string
                 :return: list of dictionary
 
+            request_url:http://127.0.0.1:8000/api/v1/task/price?date_from=2016-01-01&date_to=2016-01-26&orig_code=CNCWN&dest_code=FIKTK
+            :returns: [
+    {
+        "day": "2016-01-01",
+        "average_price": "null"
+    },
+    {
+        "day": "2016-01-02",
+        "average_price": 1715.5
+    },
+    ]
 
         """
 
@@ -93,11 +93,10 @@ class PriceApiView(APIView):
 
                 parent_slug = Regions.objects.get_parent_slug(region)
                 port_code = Ports.objects.get_port_code(parent_slug)
-                # for x in port_code:
-                #     print(x['code'])
+
+                #chosing random port code
                 orig_code = port_code[10]["code"]
                 dest_code = port_code[20]["code"]
-                print(orig_code,dest_code)
 
             date_list = format_date(day_from, day_to)
 
@@ -107,7 +106,6 @@ class PriceApiView(APIView):
             else:
 
                 for day in date_list:
-                    print(orig_code,dest_code)
                     queryset = Prices.objects.get_price(day, orig_code, dest_code)
                     result.append(queryset)
 
